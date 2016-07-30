@@ -87,20 +87,20 @@
 
 ;; Safe read - buffer
 (defun %safe-read-no-buffer (stream)
-  (let ((line (read-limited-line stream)))
+  (let ((line (read-limited-line stream nil)))
     (safe-read-handler-case
       (read-from-string line))))
 
 ;; Safe read function - no buffer
 (defun %safe-read-buffer (stream)
-  (let* ((line (read-limited-line stream))
+  (let* ((line (read-limited-line stream t))
 	 (buffer (buffer-of stream))
 	 (line (cat line buffer)))
     (safe-read-handler-case
       (read-from-string (cat buffer line)))))
 
 ;; Reading from string with a maximum size limit
-(defun read-limited-line (stream)
+(defun read-limited-line (stream &optional buffer-p)
   (let* (result-status
 	 (line-read
 	   (with-output-to-string (result)
@@ -110,7 +110,7 @@
 		 ((member char '(#\Newline #\Nul))
 		  (setf result-status (if (eql char #\Newline) :newline :eof)))
 	       (cond
-		 ((and (= char-counter 0) (char/= char #\())
+		 ((and (null buffer-p) (= char-counter 0) (char/= char #\())
 		  (signal (make-condition 'malformed-input)))
 		 ((< *max-input-size* (incf char-counter))
 		  (signal (make-condition 'input-size-exceeded)))
