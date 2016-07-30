@@ -80,7 +80,7 @@
 	     (setf (buffer-of stream) "")
 	     (values ,gensym nil))
 	 (end-of-file ()
-	   (setf (buffer-of stream) (cat line (string #\Newline)))
+	   (setf (buffer-of stream) (cat (buffer-of stream) line (string #\Newline)))
 	   (signal (make-condition 'incomplete-input)))
 	 (malformed-input (error)
 	   (signal error))))))
@@ -95,7 +95,8 @@
 (defun %safe-read-buffer (stream)
   (let* ((line (read-limited-line stream t))
 	 (buffer (buffer-of stream))
-	 (line (cat line buffer)))
+	 ;;(line (cat line buffer))
+	 )
     (safe-read-handler-case
       (read-from-string (cat buffer line)))))
 
