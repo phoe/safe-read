@@ -1,7 +1,9 @@
 # SECURE-READ
 The goal of this project is to create a reader that is able to read input from untrusted sources, such as internet sockets.
 
-As of now, this includes variant of READ secure against internbombing, excessive input and macro characters.
+Example usage - creating a client-server communication protocol that is based on S-expressions. Using bare READ on both server and client allows the malicious client/server to execute any code on any other networked clients/servers.
+
+As of now, this repository includes variant of READ secure against internbombing, excessive input and macro characters.
 
 ### Rough definitions
 * **Internbombing** - the behaviour of READ function, which automatically interns every unknown symbol it doesn't know. This can lead to namespace pollution and blowing the heap with input like `(symbol1 symbol2 ... symbol9999999999)`.
