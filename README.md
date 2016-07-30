@@ -1,5 +1,12 @@
 # SECURE-READ
-A variant of READ secure against internbombing, excessive input and macro characters.
+The goal of this project is to create a reader that is able to read input from untrusted sources, such as internet sockets.
+
+As of now, this includes variant of READ secure against internbombing, excessive input and macro characters.
+
+### Rough definitions
+* **Internbombing** - the behaviour of READ function, which automatically interns every unknown symbol it doesn't know. This can lead to namespace pollution and blowing the heap with input like `(symbol1 symbol2 ... symbol9999999999)`.
+* **Excessive input** - causing an out of memory error simply by feeding the READ function an invalid S-expression that does not terminate.
+* **Macro characters** - functioning of character macros within Lisp syntax, both standard and implementation-defined. They create simple dangers such as `#.(let (memleak) (loop (setf memleak (cons memleak memleak))))` along with more subtle ones that are not listed here.
 
 ### Function SAFE-READ
 _`&optional (stream *standard-input*)` **→** `s-expression error-status`_
