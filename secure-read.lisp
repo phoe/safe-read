@@ -94,9 +94,7 @@
 ;; Safe read function - no buffer
 (defun %safe-read-buffer (stream)
   (let* ((line (read-limited-line stream t))
-	 (buffer (buffer-of stream))
-	 ;;(line (cat line buffer))
-	 )
+	 (buffer (buffer-of stream)))
     (safe-read-handler-case
       (read-from-string (cat buffer line)))))
 
