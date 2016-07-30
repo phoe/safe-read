@@ -26,6 +26,8 @@ _`&optional (stream *standard-input*)` **→** `s-expression error-status`_
   * All symbols read are non-interned.
   * Read always stops on EOF and newlines.
   * Reading from each stream is buffered, meaning that subsequent calls to SAFE-READ can produce a valid S-expression if it spans over multiple lines. An example is a list containing a string containing a newline.
+  * No new S-expression must begin on the line where the previous one ended as they will be ignored.
 
 ### TODO
   * `make it possible to signal conditions instead of relying on the second return value.`
+  * `make it possible to read multiple expressions without newlines`
