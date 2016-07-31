@@ -8,23 +8,31 @@
 
 ;; Exported conditions and parameters
 (define-condition incomplete-input () ())
+
 (define-condition malformed-input (error) ())
+
 (define-condition input-size-exceeded (error) ())
+
 (defparameter *max-input-size* (* 128 1024))
 
 ;; Utility functions
 (defun condition-key (condition)
   (intern (string (type-of condition)) (find-package :keyword)))
+
 (eval-when (:load-toplevel :compile-toplevel :execute)
   (defun cat (&rest strings) (apply #'concatenate 'string strings)))
 
 ;; Buffers for streams
 (defvar *stream-buffers* (make-hash-table))
+
 (defun buffer-of (stream)
   (check-type stream stream)
   (or (gethash stream *stream-buffers*) ""))
+
 (defun (setf buffer-of) (new-value stream)
-  (setf (gethash stream *stream-buffers*) new-value))
+  (if (or (null new-value) (string= new-value ""))
+      (remhash stream *stream-buffers*)
+      (setf (gethash stream *stream-buffers*) new-value)))
 
 ;; Utility macro - temporary packages
 (defmacro with-temp-package (&body body) 
@@ -32,11 +40,11 @@
 	   (gensym (cat "TEMP-PKG-"
 			(format nil "~S" (local-time:now))
 			"-")))
-	 (gensym (gensym)))
-    `(let ((,gensym (make-package ',package-name)))
-       (unwind-protect (let ((*package* ,gensym))
+	 (package-var (gensym)))
+    `(let ((,package-var (make-package ',package-name)))
+       (unwind-protect (let ((*package* ,package-var))
 			 ,@body)
-	 (delete-package ,gensym)))))
+	 (delete-package ,package-var)))))
 
 ;; Utility macro - creating a safe readtable at compile-time
 (eval-when (:compile-toplevel :load-toplevel :execute)
