@@ -74,8 +74,11 @@
 	    (%safe-read-buffer stream))
       (incomplete-input ()
 	(values nil :incomplete-input))
+      (end-of-file (e)
+        (error e))
       (error (error)
 	(setf (buffer-of stream) "")
+        (format t "[!] SAFE-READ: ~S~%" (condition-key error))
 	(values nil (condition-key error))))))
 
 ;; Handler-case and macro-wrapper for safe reading
@@ -88,9 +91,10 @@
 	     (setf (buffer-of stream) "")
 	     (values ,gensym nil))
 	 (end-of-file ()
-	   (setf (buffer-of stream) (cat (buffer-of stream) line (string #\Newline)))
-	   (signal (make-condition 'incomplete-input)))
+           (setf (buffer-of stream) (cat (buffer-of stream) line (string #\Newline)))
+           (signal (make-condition 'incomplete-input)))
 	 (malformed-input (error)
+           (setf (buffer-of stream) "")
 	   (signal error))))))
 
 ;; Safe read - buffer
@@ -108,14 +112,12 @@
 
 ;; Reading from string with a maximum size limit
 (defun read-limited-line (stream &optional buffer-p)
-  (let* (result-status
-	 (line-read
+  (let* ((line-read
 	   (with-output-to-string (result)
 	     (do ((char-counter 0)
-		  (char (read-char stream nil #\Nul)
-			(read-char stream nil #\Nul)))
-		 ((member char '(#\Newline #\Nul))
-		  (setf result-status (if (eql char #\Newline) :newline :eof)))
+		  (char (read-char stream)
+			(read-char stream)))
+		 ((member char '(#\Newline #\Nul)))
 	       (cond
 		 ((and (null buffer-p) (= char-counter 0) (char/= char #\())
 		  (signal (make-condition 'malformed-input)))
@@ -123,4 +125,4 @@
 		  (signal (make-condition 'input-size-exceeded)))
 		 (t
 		  (princ char result)))))))
-    (values line-read result-status)))
+    line-read))
