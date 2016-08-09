@@ -35,7 +35,7 @@
       (setf (gethash stream *stream-buffers*) new-value)))
 
 ;; Utility macro - temporary packages
-(defmacro with-temp-package (&body body) 
+(defmacro with-temp-package (&body body)
   (let* ((package-name
 	   (gensym (cat "TEMP-PKG-"
 			(format nil "~S" (local-time:now))
@@ -53,7 +53,7 @@
   (let ((*readtable* %safe-readtable%))
     (flet ((signal-malformed-input (stream ignore)
 	     (declare (ignore stream ignore))
-	     (error 'malformed-input))) 
+	     (error 'malformed-input)))
       (dotimes (i %max-safe-char%)
 	(let* ((char (code-char i))
 	       (macro-char (get-macro-character char)))
