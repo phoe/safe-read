@@ -36,10 +36,8 @@
 
 ;; Utility macro - temporary packages
 (defmacro with-temp-package (&body body)
-  (let* ((package-name
-	   (gensym (cat "TEMP-PKG-"
-			(format nil "~S" (local-time:now))
-			"-")))
+  (let* ((now (format nil "~S" (local-time:now)))
+	 (package-name (gensym (cat "TEMP-PKG-" now "-")))
 	 (package-var (gensym)))
     `(let ((,package-var (make-package ',package-name)))
        (unwind-protect (let ((*package* ,package-var))
@@ -51,9 +49,14 @@
   (defparameter %safe-readtable% (copy-readtable))
   (defparameter %max-safe-char% 256)
   (let ((*readtable* %safe-readtable%))
-    (flet ((signal-malformed-input (stream ignore)
-	     (declare (ignore stream ignore))
-	     (error 'malformed-input)))
+    (flet ((signal-malformed-input (stream char)
+	     (declare (ignore stream char))
+	     (error 'malformed-input))
+	   (eat-colon (stream char)
+	     (declare (ignore char))
+	     (if (eq #\: (peek-char stream))
+		 (read-char stream)
+		 (error 'malformed-input))))
       (dotimes (i %max-safe-char%)
 	(let* ((char (code-char i))
 	       (macro-char (get-macro-character char)))
@@ -62,7 +65,7 @@
 		      (eql char #\))
 		      (eql char #\")
 		      (null macro-char))
-	    (set-macro-character char #'signal-malformed-input))))
+	    (set-macro-character char #'eat-colon))))
       (set-macro-character #\: #'signal-malformed-input))))
 
 ;; Main exported function
@@ -126,3 +129,18 @@
 		 (t
 		  (princ char result)))))))
     line-read))
+
+;;;; Testing function
+(defun %signals (expected fn)
+  (flet ((handler (condition)
+           (cond ((typep condition expected)
+		  (return-from %signals t))
+                 (t (error "Expected to signal ~s, but got ~s:~%~a"
+			   expected (type-of condition) condition)))))
+    (handler-bind ((condition #'handler))
+      (funcall fn)))
+  (error "Expected to signal ~s, but got nothing." expected))
+
+(defmacro signals (condition &body body)
+  "Assert that `body' signals a condition of type `condition'."
+  `(%signals ',condition (lambda () ,@body)))
