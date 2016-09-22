@@ -12,9 +12,8 @@
 ;;;; WITH-TEMP-PACKAGE test
 (let ((*package* (find-package "COMMON-LISP")))
   (with-temp-package
-    (assert (not (eq *package* (find-package "COMMON-LISP"))))
-    (print (package-name *package*))
-    (assert (search "TEMP-PKG" (package-name *package*)))))
+    (assert (not (eq *package* (find-package "COMMON-LISP")))) 
+    (assert (search "TEMP-PKG-" (package-name *package*)))))
 
 ;;;; SAFE-READTABLE test
 (let ((*readtable* %safe-readtable%))
@@ -28,4 +27,4 @@
 	   (sharpsign-strings (mapcar #'generate sharpsign-chars))) 
       (mapcar #'oerrors '("\"" "(" ")" "#")) 
       (mapcar #'errors (list* "'" ";" "`" "," sharpsign-strings))
-      (string= 'test (read-from-string "#:test")))))
+      (eq 'test (read-from-string "#:test")))))
