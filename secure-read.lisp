@@ -13,7 +13,7 @@
 
 (define-condition input-size-exceeded (error) ())
 
-(defparameter *max-input-size* (* 128 1024))
+(defvar *max-input-size* (* 128 1024))
 
 ;; Utility functions
 (defun condition-key (condition)
@@ -72,8 +72,8 @@
   (let ((buffer (buffer-of stream)))
     (handler-case
 	(if (string= "" buffer)
-	    (%safe-read-no-buffer stream)
-	    (%safe-read-buffer stream))
+	    (safe-read-no-buffer stream)
+	    (safe-read-buffer stream))
       (incomplete-input ()
 	(values nil :incomplete-input))
       (end-of-file (e)
@@ -82,6 +82,31 @@
 	(setf (buffer-of stream) "")
         (format t "[!] SAFE-READ: ~S~%" (condition-key error))
 	(values nil (condition-key error))))))
+
+;; Safe read - buffer
+(defun safe-read-no-buffer (stream)
+  (let ((line (read-limited-line stream)))
+    (safe-read-handler-case
+      (read-from-string line))))
+
+;; Safe read function - no buffer
+(defun safe-read-buffer (stream)
+  (let* ((buffer (buffer-of stream))
+	 (line (read-limited-line stream (length buffer))))
+    (safe-read-handler-case
+      (read-from-string (cat buffer line)))))
+
+;; Reading from string with a maximum size limit
+(defun read-limited-line (&optional (stream *standard-input*) (buffer-length 0))
+  (with-output-to-string (result)
+    (do ((char-counter buffer-length)
+	 (char (read-char stream) (read-char stream)))
+	((member char '(#\Newline #\Nul)))
+      (cond ((and (= 0 buffer-length) (= 0 char-counter) (char/= #\( char))
+	     (signal (make-condition 'malformed-input)))
+	    ((< *max-input-size* (incf char-counter))
+	     (signal (make-condition 'input-size-exceeded)))
+	    (t (princ char result))))))
 
 ;; Handler-case and macro-wrapper for safe reading
 (defmacro safe-read-handler-case (&body body)
@@ -99,37 +124,7 @@
            (setf (buffer-of stream) "")
 	   (signal error))))))
 
-;; Safe read - buffer
-(defun %safe-read-no-buffer (stream)
-  (let ((line (read-limited-line stream nil)))
-    (safe-read-handler-case
-      (read-from-string line))))
-
-;; Safe read function - no buffer
-(defun %safe-read-buffer (stream)
-  (let* ((line (read-limited-line stream t))
-	 (buffer (buffer-of stream)))
-    (safe-read-handler-case
-      (read-from-string (cat buffer line)))))
-
-;; Reading from string with a maximum size limit
-(defun read-limited-line (stream &optional buffer-p)
-  (let* ((line-read
-	   (with-output-to-string (result)
-	     (do ((char-counter 0)
-		  (char (read-char stream)
-			(read-char stream)))
-		 ((member char '(#\Newline #\Nul)))
-	       (cond
-		 ((and (null buffer-p) (= char-counter 0) (char/= char #\())
-		  (signal (make-condition 'malformed-input)))
-		 ((< *max-input-size* (incf char-counter))
-		  (signal (make-condition 'input-size-exceeded)))
-		 (t
-		  (princ char result)))))))
-    line-read))
-
-;;;; Testing function
+;;;; Testing framework
 (defun %signals (expected fn)
   (flet ((handler (condition)
            (cond ((typep condition expected)
