@@ -81,7 +81,23 @@
       (error (error)
 	(setf (buffer-of stream) "")
         (format t "[!] SAFE-READ: ~S~%" (condition-key error))
-	(values nil (condition-key error))))))
+        (values nil (condition-key error))))))
+
+;; Handler-case and macro-wrapper for safe reading
+(defmacro safe-read-handler-case (&body body)
+  (let ((gensym (gensym)))
+    `(with-temp-package
+       (handler-case
+	   (let* ((*readtable* %safe-readtable%)
+		  (,gensym (progn ,@body)))
+	     (setf (buffer-of stream) "")
+	     (values ,gensym nil))
+	 (end-of-file ()
+           (setf (buffer-of stream) (cat (buffer-of stream) line (string #\Newline)))
+           (signal (make-condition 'incomplete-input)))
+	 (malformed-input (error)
+           (setf (buffer-of stream) "")
+	   (signal error))))))
 
 ;; Safe read - buffer
 (defun safe-read-no-buffer (stream)
@@ -108,18 +124,3 @@
 	     (signal (make-condition 'input-size-exceeded)))
 	    (t (princ char result))))))
 
-;; Handler-case and macro-wrapper for safe reading
-(defmacro safe-read-handler-case (&body body)
-  (let ((gensym (gensym)))
-    `(with-temp-package
-       (handler-case
-	   (let* ((*readtable* %safe-readtable%)
-		  (,gensym (progn ,@body)))
-	     (setf (buffer-of stream) "")
-	     (values ,gensym nil))
-	 (end-of-file ()
-           (setf (buffer-of stream) (cat (buffer-of stream) line (string #\Newline)))
-           (signal (make-condition 'incomplete-input)))
-	 (malformed-input (error)
-           (setf (buffer-of stream) "")
-	   (signal error))))))
