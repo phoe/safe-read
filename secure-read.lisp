@@ -39,7 +39,7 @@
   (let* ((now (format nil "~S" (local-time:now)))
 	 (package-name (gensym (cat "TEMP-PKG-" now "-")))
 	 (package-var (gensym)))
-    `(let ((,package-var (make-package ',package-name)))
+    `(let ((,package-var (make-package ',package-name :use nil)))
        (unwind-protect (let ((*package* ,package-var))
 			 ,@body)
 	 (delete-package ,package-var)))))
