@@ -7,20 +7,6 @@
 ;; To run all tests, compile this file.
 (in-package #:secure-read)
 
-;;;; Testing framework
-(defun %signals (expected fn)
-  (flet ((handler (condition)
-	   (cond ((typep condition expected) (return-from %signals t))
-		 (t (error "Expected to signal ~s, but got ~s:~%~a"
-			   expected (type-of condition) condition)))))
-    (handler-bind ((condition #'handler)) (funcall fn)))
-  (error "Expected to signal ~s, but got nothing." expected))
-(defmacro signals (condition &body body)
-  "Assert that `body' signals a condition of type `condition'."
-  `(%signals ',condition (lambda () ,@body)))
-
-
-
 ;;;; CONDITION-KEY test
 (let ((condition (make-condition 'error)))
   (assert (string= 'error (condition-key condition))))

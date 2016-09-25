@@ -124,18 +124,32 @@
       (read-from-string (cat buffer line)))))
 
 ;; Reading from string with a maximum size limit
-(defun read-limited-line (&optional (stream *standard-input*) (buffer-length 0))
+(defun read-limited-line (&optional (stream *standard-input*) (buffer-length 0)) 
   (with-output-to-string (result)
-    (handler-case
-        (do ((char-counter buffer-length)
-             (char (read-char stream) (read-char stream)))
-            ((member char '(#\Newline #\Nul)))
-          (cond ((and (= 0 buffer-length) (= 0 char-counter) (whitespace-p char))
-                 nil)
-                ((and (= 0 buffer-length) (= 0 char-counter) (char/= #\( char))
-                 (signal (make-condition 'malformed-input)))
-                ((< *max-input-size* (incf char-counter))
-                 (signal (make-condition 'input-size-exceeded)))
-                (t (princ char result))))
-      (end-of-file ()))))
+    (let ((char-counter buffer-length))
+      (loop
+        (handler-case
+            (let ((char (read-char stream)))
+              (when (member char '(#\Newline #\Nul)) (return))
+              (cond ((and (= 0 buffer-length) (= 0 char-counter) (whitespace-p char))
+                     nil)
+                    ((and (= 0 buffer-length) (= 0 char-counter) (char/= #\( char))
+                     (signal (make-condition 'malformed-input)))
+                    ((< *max-input-size* (incf char-counter))
+                     (signal (make-condition 'input-size-exceeded)))
+                    (t (princ char result))))
+          (end-of-file (e)
+            (when (and (= 0 buffer-length) (= 0 char-counter))
+              (error e))))))))
 
+;;;; Testing framework
+(defun %signals (expected fn)
+  (flet ((handler (condition)
+	   (cond ((typep condition expected) (return-from %signals t))
+		 (t (error "Expected to signal ~s, but got ~s:~%~a"
+			   expected (type-of condition) condition)))))
+    (handler-bind ((condition #'handler)) (funcall fn)))
+  (error "Expected to signal ~s, but got nothing." expected))
+(defmacro signals (condition &body body)
+  "Assert that `body' signals a condition of type `condition'."
+  `(%signals ',condition (lambda () ,@body)))
