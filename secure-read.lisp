@@ -19,11 +19,20 @@
 (defun condition-key (condition)
   (intern (string (type-of condition)) (find-package :keyword)))
 
+(defun whitespace-p (char)
+  (member char '(#\Space #\Newline #\Backspace #\Tab 
+                 #\Linefeed #\Page #\Return #\Rubout)))
+
+(defun trim-leading-whitespace (string)
+  (let ((whitespace '(#\Space #\Newline #\Backspace #\Tab 
+                      #\Linefeed #\Page #\Return #\Rubout)))
+    (string-left-trim whitespace string)))
+
 (eval-when (:load-toplevel :compile-toplevel :execute)
   (defun cat (&rest strings) (apply #'concatenate 'string strings)))
 
 ;; Buffers for streams
-(defvar *stream-buffers* (make-hash-table))
+(defvar *stream-buffers* (make-weak-hash-table :weakness :key))
 
 (defun buffer-of (stream)
   (check-type stream stream)
@@ -80,8 +89,9 @@
         (error e))
       (error (error)
 	(setf (buffer-of stream) "")
-        (format t "[!] SAFE-READ: ~S~%" (condition-key error))
-        (values nil (condition-key error))))))
+        ;;(format t "[!] SAFE-READ: ~S~%" (condition-key error))
+        ;;(values nil (condition-key error))
+        (error error)))))
 
 ;; Handler-case and macro-wrapper for safe reading
 (defmacro safe-read-handler-case (&body body)
@@ -93,15 +103,16 @@
 	     (setf (buffer-of stream) "")
 	     (values ,gensym nil))
 	 (end-of-file ()
-           (setf (buffer-of stream) (cat (buffer-of stream) line (string #\Newline)))
+           (unless (string= line "")
+             (setf (buffer-of stream) (cat (buffer-of stream) line (string #\Newline))))
            (signal (make-condition 'incomplete-input)))
-	 (malformed-input (error)
+         (malformed-input (error)
            (setf (buffer-of stream) "")
-	   (signal error))))))
+           (signal error))))))
 
 ;; Safe read - buffer
 (defun safe-read-no-buffer (stream)
-  (let ((line (read-limited-line stream)))
+  (let ((line (trim-leading-whitespace (read-limited-line stream))))
     (safe-read-handler-case
       (read-from-string line))))
 
@@ -115,12 +126,16 @@
 ;; Reading from string with a maximum size limit
 (defun read-limited-line (&optional (stream *standard-input*) (buffer-length 0))
   (with-output-to-string (result)
-    (do ((char-counter buffer-length)
-	 (char (read-char stream) (read-char stream)))
-	((member char '(#\Newline #\Nul)))
-      (cond ((and (= 0 buffer-length) (= 0 char-counter) (char/= #\( char))
-	     (signal (make-condition 'malformed-input)))
-	    ((< *max-input-size* (incf char-counter))
-	     (signal (make-condition 'input-size-exceeded)))
-	    (t (princ char result))))))
+    (handler-case
+        (do ((char-counter buffer-length)
+             (char (read-char stream) (read-char stream)))
+            ((member char '(#\Newline #\Nul)))
+          (cond ((and (= 0 buffer-length) (= 0 char-counter) (whitespace-p char))
+                 nil)
+                ((and (= 0 buffer-length) (= 0 char-counter) (char/= #\( char))
+                 (signal (make-condition 'malformed-input)))
+                ((< *max-input-size* (incf char-counter))
+                 (signal (make-condition 'input-size-exceeded)))
+                (t (princ char result))))
+      (end-of-file ()))))
 
