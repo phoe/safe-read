@@ -50,7 +50,7 @@
     (let ((stream (streamify data-4)))
       (assert (null (safe-read-no-buffer stream)))
       (assert (null (safe-read-no-buffer stream))))
-    ;; SAFE-READ-BUFFER
+    ;; SAFE-READ-BUFFER			
     (assert (symbol-test #'bread data-0))
     (assert (equal data-1 (bread data-1)))
     (assert (signals input-size-exceeded (bread data-2)))

@@ -128,19 +128,17 @@
   (with-output-to-string (result)
     (let ((char-counter buffer-length))
       (loop
-        (handler-case
-            (let ((char (read-char stream)))
-              (when (member char '(#\Newline #\Nul)) (return))
-              (cond ((and (= 0 buffer-length) (= 0 char-counter) (whitespace-p char))
-                     nil)
-                    ((and (= 0 buffer-length) (= 0 char-counter) (char/= #\( char))
-                     (signal (make-condition 'malformed-input)))
-                    ((< *max-input-size* (incf char-counter))
-                     (signal (make-condition 'input-size-exceeded)))
-                    (t (princ char result))))
-          (end-of-file (e)
-            (when (and (= 0 buffer-length) (= 0 char-counter))
-              (error e))))))))
+	(handler-case
+	    (let ((char (read-char stream)))
+	      (when (member char '(#\Newline #\Nul)) (return))
+	      (cond ((and (= 0 buffer-length) (= 0 char-counter) (whitespace-p char))
+		     nil)
+		    ((and (= 0 buffer-length) (= 0 char-counter) (char/= #\( char))
+		     (signal (make-condition 'malformed-input)))
+		    ((< *max-input-size* (incf char-counter))
+		     (signal (make-condition 'input-size-exceeded)))
+		    (t (princ char result))))
+	  (end-of-file () (return)))))))
 
 ;;;; Testing framework
 (defun %signals (expected fn)
@@ -150,6 +148,7 @@
 			   expected (type-of condition) condition)))))
     (handler-bind ((condition #'handler)) (funcall fn)))
   (error "Expected to signal ~s, but got nothing." expected))
+
 (defmacro signals (condition &body body)
   "Assert that `body' signals a condition of type `condition'."
   `(%signals ',condition (lambda () ,@body)))
