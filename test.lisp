@@ -43,14 +43,16 @@
 	   (bread (data) (safe-read-buffer (streamify data)))
 	   (symbol-test (fn data) (string= (first data) (first (funcall fn data)))))
     ;; SAFE-READ-NO-BUFFER
-    (assert (symbol-test #'nread data-0))
+    (let ((stream (streamify data-0)))
+      (assert (string= (first data-0) (first (safe-read-no-buffer stream))))
+      (assert (signals end-of-file (safe-read-no-buffer stream))))
     (assert (equal data-1 (nread data-1)))
     (assert (signals input-size-exceeded (nread data-2)))
     (assert (signals malformed-input (nread data-3)))
     (let ((stream (streamify data-4)))
       (assert (null (safe-read-no-buffer stream)))
-      (assert (null (safe-read-no-buffer stream))))
-    ;; SAFE-READ-BUFFER			
+      (signals malformed-input (read-limited-line stream)))
+    ;; SAFE-READ-BUFFER
     (assert (symbol-test #'bread data-0))
     (assert (equal data-1 (bread data-1)))
     (assert (signals input-size-exceeded (bread data-2)))

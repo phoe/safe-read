@@ -126,19 +126,23 @@
 ;; Reading from string with a maximum size limit
 (defun read-limited-line (&optional (stream *standard-input*) (buffer-length 0)) 
   (with-output-to-string (result)
-    (let ((char-counter buffer-length))
-      (loop
-	(handler-case
-	    (let ((char (read-char stream)))
-	      (when (member char '(#\Newline #\Nul)) (return))
-	      (cond ((and (= 0 buffer-length) (= 0 char-counter) (whitespace-p char))
-		     nil)
-		    ((and (= 0 buffer-length) (= 0 char-counter) (char/= #\( char))
-		     (signal (make-condition 'malformed-input)))
-		    ((< *max-input-size* (incf char-counter))
-		     (signal (make-condition 'input-size-exceeded)))
-		    (t (princ char result))))
-	  (end-of-file () (return)))))))
+    (let ((char-counter buffer-length) char)
+      (block loop
+	(loop
+	  (setf char (read-char stream nil :eof))
+	  (cond ((eq char #\Newline)
+		 (return-from loop))
+		((eq char :eof)
+		 (if (= 0 char-counter)
+		     (error 'end-of-file :stream stream)
+		     (return-from loop)))
+		((and (= 0 buffer-length) (= 0 char-counter) (whitespace-p char))
+		 nil)
+		((and (= 0 buffer-length) (= 0 char-counter) (char/= #\( char))
+		 (signal (make-condition 'malformed-input)))
+		((< *max-input-size* (incf char-counter))
+		 (signal (make-condition 'input-size-exceeded)))
+		(t (princ char result))))))))
 
 ;;;; Testing framework
 (defun %signals (expected fn)
