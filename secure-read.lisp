@@ -139,9 +139,9 @@
 		((and (= 0 buffer-length) (= 0 char-counter) (whitespace-p char))
 		 nil)
 		((and (= 0 buffer-length) (= 0 char-counter) (char/= #\( char))
-		 (signal (make-condition 'malformed-input)))
+		 (error (make-condition 'malformed-input)))
 		((< *max-input-size* (incf char-counter))
-		 (signal (make-condition 'input-size-exceeded)))
+		 (error (make-condition 'input-size-exceeded)))
 		(t (princ char result))))))))
 
 ;;;; Testing framework
