@@ -81,3 +81,5 @@
     (assert (null (safe-read stream)))
     (assert (null (safe-read stream)))
     (assert (equal '(3 2 1 0 1 2 3 4 5) (safe-read stream)))))
+
+;; TODO one of the tests hangs indefinitely, check it
