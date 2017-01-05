@@ -46,13 +46,13 @@
 ;; Utility macro - temporary packages
 (defmacro with-temp-package (&body body)
   (let* ((now (format nil "~S" (local-time:now)))
-	 (package-name (gensym (cat "TEMP-PKG-" now "-")))
-	 (package-var (gensym)))
+         (package-name (gensym (cat "TEMP-PKG-" now "-")))
+         (package-var (gensym)))
     `(let ((,package-var (or (find-package ',package-name)
                              (make-package ',package-name :use nil))))
        (unwind-protect (let ((*package* ,package-var))
-			 ,@body)
-	 (delete-package ,package-var)))))
+                         ,@body)
+         (delete-package ,package-var)))))
 
 ;; Utility macro - creating a safe readtable at compile-time
 (eval-when (:compile-toplevel :load-toplevel :execute)
