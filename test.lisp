@@ -30,7 +30,7 @@
            (sharpsign-strings (mapcar #'generate sharpsign-chars)))
       (mapcar #'oerrors '("\"" "(" ")" "#"))
       (mapcar #'errors (list* "'" ";" "`" "," sharpsign-strings))
-      (eq 'test (read-from-string "#:test")))))
+      (assert (eq 'test (read-from-string "#:test"))))))
 
 ;;;; SAFE-READ-NO-BUFFER and SAFE-READ-BUFFER
 (let* ((*max-input-size* 20)

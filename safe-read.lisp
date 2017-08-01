@@ -128,8 +128,10 @@
   (with-output-to-string (result)
     (let ((char-counter buffer-length) char)
       (loop
-        (setf char (read-char stream nil :eof))
-        (cond ((eq char #\Newline)
+        (setf char (read-char-no-hang stream nil :eof))
+        (cond ((null char)
+               (return))
+              ((eq char #\Newline)
                (return))
               ((and (eq char :eof) (= 0 char-counter))
                (error 'end-of-file :stream stream))
