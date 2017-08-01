@@ -3,7 +3,7 @@
 ;;;; © Michał "phoe" Herda 2016
 ;;;; package.lisp
 
-(defpackage #:secure-read
+(defpackage #:safe-read
   (:use #:cl :trivial-garbage)
   (:export #:safe-read
 	   #:with-temp-package 

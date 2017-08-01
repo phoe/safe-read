@@ -1,4 +1,4 @@
-# SECURE-READ
+# SAFE-READ
 The goal of this project is to create a wrapper around standard Lisp reader to make it able to read input from untrusted sources, such as internet sockets.
 
 Example usage - creating a client-server communication protocol that is based on S-expressions. Using bare READ on both server and client allows the malicious client/server to execute any code on any other networked clients/servers.

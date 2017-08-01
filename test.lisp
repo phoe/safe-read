@@ -1,11 +1,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; SECURE-READ
+;;;; SAFE-READ
 ;;;; © Michał "phoe" Herda 2016
 ;;;; test.lisp
 
 ;; No Lisp hackery is complete without tests.
 ;; To run all tests, compile this file.
-(in-package #:secure-read)
+(in-package #:safe-read)
 
 ;;;; CONDITION-KEY test
 (let ((condition (make-condition 'error)))

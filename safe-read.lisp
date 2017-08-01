@@ -1,10 +1,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; SECURE-READ
+;;;; SAFE-READ
 ;;;; © Michał "phoe" Herda 2016
-;;;; secure-read.lisp
+;;;; safe-read.lisp
 
 ;; Lisp reader hackery below. Beware.
-(in-package #:secure-read)
+(in-package #:safe-read)
 
 ;; Exported conditions and parameters
 (define-condition incomplete-input () ())
