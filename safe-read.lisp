@@ -106,9 +106,9 @@
              (setf (buffer-of stream)
                    (cat (buffer-of stream) line (string #\Newline))))
            (signal (make-condition 'incomplete-input)))
-         (malformed-input (error)
+         (malformed-input (e)
            (setf (buffer-of stream) "")
-           (signal error))))))
+           (signal e))))))
 
 ;; Safe read - no buffer
 (defun safe-read-no-buffer (stream)
