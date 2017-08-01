@@ -14,20 +14,21 @@
 ;;;; WITH-TEMP-PACKAGE test
 (let ((*package* (find-package "COMMON-LISP")))
   (with-temp-package
-    (assert (not (eq *package* (find-package "COMMON-LISP")))) 
+    (assert (not (eq *package* (find-package "COMMON-LISP"))))
     (assert (search "TEMP-PKG-" (package-name *package*)))))
 
 ;;;; SAFE-READTABLE test
 (let ((*readtable* %safe-readtable%))
   (flet ((errors (string) (signals malformed-input (read-from-string string)))
-	 (oerrors (string) (signals (and error (not malformed-input))
-			     (read-from-string string)))
-	 (generate (char) (coerce (list #\# char) 'string)))
-    (let* ((sharpsign-chars '(#\A #\B #\C #\D #\E #\F #\G #\H #\I #\J #\K #\L #\M
-			      #\N #\O #\P #\Q #\R #\S #\T #\U #\V #\W #\X #\Y #\Z
-			      #\# #\' #\( #\) #\* #\= #\\ #\| #\+ #\- #\.))
-	   (sharpsign-strings (mapcar #'generate sharpsign-chars))) 
-      (mapcar #'oerrors '("\"" "(" ")" "#")) 
+         (oerrors (string) (signals (and error (not malformed-input))
+                             (read-from-string string)))
+         (generate (char) (coerce (list #\# char) 'string)))
+    (let* ((sharpsign-chars '(#\A #\B #\C #\D #\E #\F #\G #\H #\I #\J #\K #\L
+                              #\M #\N #\O #\P #\Q #\R #\S #\T #\U #\V #\W #\X
+                              #\Y #\Z #\# #\' #\( #\) #\* #\= #\\ #\| #\+ #\-
+                              #\.))
+           (sharpsign-strings (mapcar #'generate sharpsign-chars)))
+      (mapcar #'oerrors '("\"" "(" ")" "#"))
       (mapcar #'errors (list* "'" ";" "`" "," sharpsign-strings))
       (eq 'test (read-from-string "#:test")))))
 
@@ -39,9 +40,9 @@
        (data-3 '(#(1 2 3 4 5)))
        (data-4 (list (cat "a" (string #\Newline) "b"))))
   (labels ((streamify (data) (make-string-input-stream (format nil "~S" data)))
-	   (nread (data) (safe-read-no-buffer (streamify data)))
-	   (bread (data) (safe-read-buffer (streamify data)))
-	   (symbol-test (fn data) (string= (first data) (first (funcall fn data)))))
+     (nread (data) (safe-read-no-buffer (streamify data)))
+     (bread (data) (safe-read-buffer (streamify data)))
+     (symbol-test (fn data) (string= (first data) (first (funcall fn data)))))
     ;; SAFE-READ-NO-BUFFER
     (let ((stream (streamify data-0)))
       (assert (string= (first data-0) (first (safe-read-no-buffer stream))))
@@ -72,9 +73,9 @@
                     "(3 2 1"
                     "0 1 2"
                     "          "
-                    "3 4 5)")) 
-	 (string (apply #'cat (mapcar #'newline strings)))
-	 (stream (make-string-input-stream string)))
+                    "3 4 5)"))
+         (string (apply #'cat (mapcar #'newline strings)))
+         (stream (make-string-input-stream string)))
     (assert (equal '(1 2 3 4) (safe-read stream)))
     (assert (equal '(5 6 7 8) (safe-read stream)))
     (assert (null (safe-read stream)))

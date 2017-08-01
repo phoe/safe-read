@@ -20,11 +20,11 @@
   (intern (string (type-of condition)) (find-package :keyword)))
 
 (defun whitespace-p (char)
-  (member char '(#\Space #\Newline #\Backspace #\Tab 
+  (member char '(#\Space #\Newline #\Backspace #\Tab
                  #\Linefeed #\Page #\Return #\Rubout)))
 
 (defun trim-leading-whitespace (string)
-  (let ((whitespace '(#\Space #\Newline #\Backspace #\Tab 
+  (let ((whitespace '(#\Space #\Newline #\Backspace #\Tab
                       #\Linefeed #\Page #\Return #\Rubout)))
     (string-left-trim whitespace string)))
 
@@ -90,8 +90,6 @@
         (error e))
       (error (error)
         (setf (buffer-of stream) "")
-        ;;(format t "[!] SAFE-READ: ~S~%" (condition-key error))
-        ;;(values nil (condition-key error))
         (error error)))))
 
 ;; Handler-case and macro-wrapper for safe reading
@@ -105,45 +103,45 @@
              (values ,gensym nil))
          (end-of-file ()
            (unless (string= line "")
-             (setf (buffer-of stream) (cat (buffer-of stream) line (string #\Newline))))
+             (setf (buffer-of stream)
+                   (cat (buffer-of stream) line (string #\Newline))))
            (signal (make-condition 'incomplete-input)))
          (malformed-input (error)
            (setf (buffer-of stream) "")
            (signal error))))))
 
-;; Safe read - buffer
+;; Safe read - no buffer
 (defun safe-read-no-buffer (stream)
   (let ((line (trim-leading-whitespace (read-limited-line stream))))
     (safe-read-handler-case
       (read-from-string line))))
 
-;; Safe read function - no buffer
+;; Safe read - buffer
 (defun safe-read-buffer (stream)
   (let* ((buffer (buffer-of stream))
-	 (line (read-limited-line stream (length buffer))))
+         (line (read-limited-line stream (length buffer))))
     (safe-read-handler-case
       (read-from-string (cat buffer line)))))
 
 ;; Reading from string with a maximum size limit
-(defun read-limited-line (&optional (stream *standard-input*) (buffer-length 0)) 
+(defun read-limited-line (&optional (stream *standard-input*) (buffer-length 0))
   (with-output-to-string (result)
     (let ((char-counter buffer-length) char)
-      (block loop
-        (loop
-          (setf char (read-char stream nil :eof))
-          (cond ((eq char #\Newline)
-                 (return-from loop))
-                ((eq char :eof)
-                 (if (= 0 char-counter)
-                     (error 'end-of-file :stream stream)
-                     (return-from loop)))
-                ((and (= 0 buffer-length) (= 0 char-counter) (whitespace-p char))
-                 nil)
-                ((and (= 0 buffer-length) (= 0 char-counter) (char/= #\( char))
-                 (error (make-condition 'malformed-input)))
-                ((< *max-input-size* (incf char-counter))
-                 (error (make-condition 'input-size-exceeded)))
-                (t (princ char result))))))))
+      (loop
+        (setf char (read-char stream nil :eof))
+        (cond ((eq char #\Newline)
+               (return))
+              ((and (eq char :eof) (= 0 char-counter))
+               (error 'end-of-file :stream stream))
+              ((and (eq char :eof) (/= 0 char-counter))
+               (return))
+              ((and (= 0 buffer-length) (= 0 char-counter) (whitespace-p char))
+               nil)
+              ((and (= 0 buffer-length) (= 0 char-counter) (char/= #\( char))
+               (error (make-condition 'malformed-input)))
+              ((< *max-input-size* (incf char-counter))
+               (error (make-condition 'input-size-exceeded)))
+              (t (princ char result)))))))
 
 ;;;; Testing framework
 (defun %signals (expected fn)
