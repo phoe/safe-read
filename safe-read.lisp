@@ -28,9 +28,6 @@
                       #\Linefeed #\Page #\Return #\Rubout)))
     (string-left-trim whitespace string)))
 
-(eval-when (:load-toplevel :compile-toplevel :execute)
-  (defun cat (&rest strings) (apply #'concatenate 'string strings)))
-
 ;; Buffers for streams
 (defvar *stream-buffers* (make-weak-hash-table :weakness :key))
 
@@ -46,12 +43,11 @@
 ;; Utility macro - temporary packages
 (defmacro with-temp-package (&body body)
   (let* ((now (format nil "~S" (local-time:now)))
-         (package-name (gensym (cat "TEMP-PKG-" now "-")))
+         (package-name (gensym (uiop:strcat "TEMP-PKG-" now "-")))
          (package-var (gensym)))
     `(let ((,package-var (or (find-package ',package-name)
                              (make-package ',package-name :use nil))))
-       (unwind-protect (let ((*package* ,package-var))
-                         ,@body)
+       (unwind-protect (let ((*package* ,package-var)) ,@body)
          (delete-package ,package-var)))))
 
 ;; Utility macro - creating a safe readtable at compile-time
@@ -104,7 +100,7 @@
          (end-of-file ()
            (unless (string= line "")
              (setf (buffer-of stream)
-                   (cat (buffer-of stream) line (string #\Newline))))
+                   (uiop:strcat (buffer-of stream) line (string #\Newline))))
            (signal (make-condition 'incomplete-input)))
          (malformed-input (e)
            (setf (buffer-of stream) "")
@@ -121,7 +117,7 @@
   (let* ((buffer (buffer-of stream))
          (line (read-limited-line stream (length buffer))))
     (safe-read-handler-case
-      (read-from-string (cat buffer line)))))
+      (read-from-string (uiop:strcat buffer line)))))
 
 ;; Reading from string with a maximum size limit
 (defun read-limited-line (&optional (stream *standard-input*) (buffer-length 0))

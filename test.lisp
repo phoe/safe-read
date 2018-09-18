@@ -38,11 +38,11 @@
        (data-1 '(123456789012345678))
        (data-2 '(1234567890123456789))
        (data-3 '(#(1 2 3 4 5)))
-       (data-4 (list (cat "a" (string #\Newline) "b"))))
+       (data-4 (list (uiop:strcat "a" (string #\Newline) "b"))))
   (labels ((streamify (data) (make-string-input-stream (format nil "~S" data)))
-     (nread (data) (safe-read-no-buffer (streamify data)))
-     (bread (data) (safe-read-buffer (streamify data)))
-     (symbol-test (fn data) (string= (first data) (first (funcall fn data)))))
+           (nread (data) (safe-read-no-buffer (streamify data)))
+           (bread (data) (safe-read-buffer (streamify data)))
+           (symbol-test (fn data) (string= (first data) (first (funcall fn data)))))
     ;; SAFE-READ-NO-BUFFER
     (let ((stream (streamify data-0)))
       (assert (string= (first data-0) (first (safe-read-no-buffer stream))))
@@ -65,7 +65,7 @@
 ;; TODO add test with leading whitespace
 
 ;; SAFE-READ test
-(flet ((newline (string) (cat string (string #\Newline))))
+(flet ((newline (string) (uiop:strcat string (string #\Newline))))
   (let* ((strings '("(1 2 3 4)"
                     "    (5 6 7 8)"
                     "(9 8 7"
@@ -74,7 +74,7 @@
                     "0 1 2"
                     "          "
                     "3 4 5)"))
-         (string (apply #'cat (mapcar #'newline strings)))
+         (string (apply #'uiop:strcat (mapcar #'newline strings)))
          (stream (make-string-input-stream string)))
     (assert (equal '(1 2 3 4) (safe-read stream)))
     (assert (equal '(5 6 7 8) (safe-read stream)))
