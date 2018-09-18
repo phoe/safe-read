@@ -5,6 +5,9 @@
 
 (defpackage #:safe-read
   (:use #:cl :trivial-garbage)
-  (:export #:safe-read
-           #:with-temp-package
-           #:*max-input-size*))
+  (:export
+   #:safe-read
+   #:with-temp-package
+   #:buffer-of
+   #:*stream-buffers*
+   #:*max-input-size*))
