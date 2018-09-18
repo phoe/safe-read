@@ -140,16 +140,3 @@
               ((< *max-input-size* (incf char-counter))
                (error (make-condition 'input-size-exceeded)))
               (t (princ char result)))))))
-
-;;;; Testing framework
-(defun %signals (expected fn)
-  (flet ((handler (condition)
-           (cond ((typep condition expected) (return-from %signals t))
-                 (t (error "Expected to signal ~s, but got ~s:~%~a"
-                           expected (type-of condition) condition)))))
-    (handler-bind ((condition #'handler)) (funcall fn)))
-  (error "Expected to signal ~s, but got nothing." expected))
-
-(defmacro signals (condition &body body)
-  "Assert that `body' signals a condition of type `condition'."
-  `(%signals ',condition (lambda () ,@body)))
