@@ -93,18 +93,19 @@
   (let ((gensym (gensym)))
     `(with-temp-package
        (handler-case
-           (let* ((*readtable* %safe-readtable%)
-                  (,gensym (progn ,@body)))
-             (setf (buffer-of stream) "")
-             (values ,gensym nil))
+           (flet ((clear-buffer (e)
+                    (declare (ignore e))
+                    (setf (buffer-of stream) "")))
+             (handler-bind ((malformed-input #'clear-buffer))
+               (let* ((*readtable* %safe-readtable%)
+                      (,gensym (progn ,@body)))
+                 (setf (buffer-of stream) "")
+                 (values ,gensym nil))))
          (end-of-file ()
            (unless (string= line "")
              (setf (buffer-of stream)
                    (uiop:strcat (buffer-of stream) line (string #\Newline))))
-           (signal (make-condition 'incomplete-input)))
-         (malformed-input (e)
-           (setf (buffer-of stream) "")
-           (signal e))))))
+           (signal (make-condition 'incomplete-input)))))))
 
 ;; Safe read - no buffer
 (defun safe-read-no-buffer (stream)
