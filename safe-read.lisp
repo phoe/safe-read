@@ -44,9 +44,13 @@
 (defmacro with-temp-package (&body body)
   (let* ((now (format nil "~S" (local-time:now)))
          (package-name (gensym (uiop:strcat "TEMP-PKG-" now "-")))
-         (package-var (gensym)))
+         (package-var (gensym))
+	 (use (if (eq (first body) :use-list)
+		  (prog1 (second body)
+		    (setf body (cddr body))))))
+		    
     `(let ((,package-var (or (find-package ',package-name)
-                             (make-package ',package-name :use nil))))
+                             (make-package ',package-name :use ,use))))
        (unwind-protect (let ((*package* ,package-var)) ,@body)
          (delete-package ,package-var)))))
 
@@ -74,12 +78,12 @@
       (set-macro-character #\# #'eat-colon))))
 
 ;; Main exported function
-(defun safe-read (&optional (stream *standard-input*))
+(defun safe-read (&optional (stream *standard-input*) use-list)
   (let ((buffer (buffer-of stream)))
     (handler-case
         (if (string= "" buffer)
-            (safe-read-no-buffer stream)
-            (safe-read-buffer stream))
+            (safe-read-no-buffer stream use-list)
+            (safe-read-buffer stream use-list))
       (incomplete-input ()
         (values nil :incomplete-input))
       (end-of-file (e)
@@ -91,7 +95,9 @@
 ;; Handler-case and macro-wrapper for safe reading
 (defmacro safe-read-handler-case (&body body)
   (let ((gensym (gensym)))
-    `(with-temp-package
+    `(with-temp-package ,@(if (eq (first body) :use-list)
+			      (prog1 (list :use-list (second body))
+				(setf body (cddr body))))
        (handler-case
            (flet ((clear-buffer (e)
                     (declare (ignore e))
@@ -108,16 +114,16 @@
            (signal (make-condition 'incomplete-input)))))))
 
 ;; Safe read - no buffer
-(defun safe-read-no-buffer (stream)
+(defun safe-read-no-buffer (stream &optional use-list)
   (let ((line (trim-leading-whitespace (read-limited-line stream))))
-    (safe-read-handler-case
+    (safe-read-handler-case :use-list use-list
       (read-from-string line))))
 
 ;; Safe read - buffer
-(defun safe-read-buffer (stream)
+(defun safe-read-buffer (stream &optional use-list)
   (let* ((buffer (buffer-of stream))
          (line (read-limited-line stream (length buffer))))
-    (safe-read-handler-case
+    (safe-read-handler-case :use-list use-list
       (read-from-string (uiop:strcat buffer line)))))
 
 ;; Reading from string with a maximum size limit
