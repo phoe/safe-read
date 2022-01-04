@@ -23,7 +23,7 @@ _`&optional (stream *standard-input*) use-list` **→** `s-expression error-stat
   * Only lists are accepted as input. Atoms produce `:MALFORMED-INPUT`.
   * All macro characters other than `#\(` `#\)` `#\"` produce `:MALFORMED-INPUT`.
   * Package-qualified names (including keywords) produce `:MALFORMED-INPUT`.
-  * All symbols read are non-interned.
+  * All symbols read are non-interned except if `use-list` is provided, in which case symbols exported from the used packages will be interned in those packages.
   * Read always stops on EOF and newlines.
   * Reading from each stream is buffered, meaning that subsequent calls to SAFE-READ can produce a valid S-expression if it spans over multiple lines. An example is a list containing a string containing a newline.
   * No new S-expression must begin on the line where the previous one ended as they will be ignored.
