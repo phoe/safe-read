@@ -105,7 +105,20 @@
       (assert (null (safe-read stream)))
       (assert (equal '(3 2 1 0 1 2 3 4 5) (safe-read stream))))))
 
+;; SAFE-READ test for using symbols from packages.
+
+(defun test-6 ()
+  (with-input-from-string (stream "(first second third)")
+    (assert (equal '(first second third) (safe-read stream '(:common-lisp)))))
+  (with-input-from-string (stream "(foo bar baz)")
+    (loop for token in (safe-read stream '(:common-lisp))
+       for symbol in '(foo bar baz)
+       for string in '("FOO" "BAR" "BAZ")
+       do 
+	 (assert (not (eq token symbol)))
+	 (assert (string= (symbol-name token) string)))))
+
 ;; TODO one of the tests hangs indefinitely, check it
 
 (defun test ()
-  (test-1) (test-2) (test-3) (test-4) (test-5))
+  (test-1) (test-2) (test-3) (test-4) (test-5) (test-6))
