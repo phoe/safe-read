@@ -45,10 +45,10 @@
   (let* ((now (format nil "~S" (local-time:now)))
          (package-name (gensym (uiop:strcat "TEMP-PKG-" now "-")))
          (package-var (gensym))
-	 (use (if (eq (first body) :use-list)
-		  (prog1 (second body)
-		    (setf body (cddr body))))))
-		    
+         (use (if (eq (first body) :use-list)
+                  (prog1 (second body)
+                    (setf body (cddr body))))))
+                    
     `(let ((,package-var (or (find-package ',package-name)
                              (make-package ',package-name :use ,use))))
        (unwind-protect (let ((*package* ,package-var)) ,@body)
@@ -96,8 +96,8 @@
 (defmacro safe-read-handler-case (&body body)
   (let ((gensym (gensym)))
     `(with-temp-package ,@(if (eq (first body) :use-list)
-			      (prog1 (list :use-list (second body))
-				(setf body (cddr body))))
+                              (prog1 (list :use-list (second body))
+                                (setf body (cddr body))))
        (handler-case
            (flet ((clear-buffer (e)
                     (declare (ignore e))
