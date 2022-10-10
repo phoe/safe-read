@@ -78,19 +78,40 @@
       (set-macro-character #\# #'eat-colon))))
 
 ;; Main exported function
-(defun safe-read (&optional (stream *standard-input*) use-list)
-  (let ((buffer (buffer-of stream)))
-    (handler-case
-        (if (string= "" buffer)
-            (safe-read-no-buffer stream use-list)
-            (safe-read-buffer stream use-list))
-      (incomplete-input ()
-        (values nil :incomplete-input))
-      (end-of-file (e)
-        (error e))
-      (error (error)
-        (setf (buffer-of stream) "")
-        (error error)))))
+(defun safe-read (&optional (stream *standard-input*) use-list (interactive t))
+  (cond (interactive
+         (let ((buffer (buffer-of stream)))
+           (handler-case
+               (if (string= "" buffer)
+                   (safe-read-no-buffer stream use-list)
+                 (safe-read-buffer stream use-list))
+             (incomplete-input ()
+               (values nil :incomplete-input))
+             (end-of-file (e)
+               (error e))
+             (error (error)
+               (setf (buffer-of stream) "")
+               (error error)))))
+        (t
+         (safe-read-non-interactive stream use-list))
+        ))
+
+;; Handler-case and macro-wrapper for safe reading
+(defmacro safe-non-interactive-read-handler-case (&body body)
+  (let ((gensym (gensym)))
+    `(with-temp-package ,@(if (eq (first body) :use-list)
+                              (prog1 (list :use-list (second body))
+                                (setf body (cddr body))))
+       (let* ((*readtable* %safe-readtable%))
+         (progn
+           ,@body)))
+    ))
+
+(defun safe-read-non-interactive (stream use-list)
+  (let ((line (trim-leading-whitespace (read-limited-line stream))))
+    (safe-non-interactive-read-handler-case :use-list use-list
+      (read-from-string line))))
+
 
 ;; Handler-case and macro-wrapper for safe reading
 (defmacro safe-read-handler-case (&body body)
